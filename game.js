@@ -1,4 +1,5 @@
 var ticks = 0;
+var employee_ticks = 0;
 
 var game_state = 500;
 var DEFAULT = 500;
@@ -14,34 +15,28 @@ var init_money = 100;
 
 var employee_cost = 100;
 
-var init_apples = 100;
+var init_apples = 50;
 var apples = 0;
 
-var init_juice_boxes = 100;
+var init_juice_boxes = 0;
 var juice_boxes = 0;
 
 var text_start = 50;
 var text_increment = 30;
 
-
 var def_max_hunger = 1200;
-var def_hunger_timer = (def_max_hunger*6)/10;
 var def_hunger_down = -30;
 var def_hunger_up = 10;
 
 var def_max_thirst = 600;
-var def_thirst_timer = (def_max_thirst*6)/10;
 var def_thirst_down = -30;
 var def_thirst_up = 10;
 
-var def_juice_timer = -1;
 var def_juice_speed = 5;
 
-var def_buy_timer = -1;
-var def_buy_speed = 5;
+var def_buy_speed = 30;
 var def_apple_val = 5;
 
-var def_sell_timer = -1;
 var def_sell_speed = 5;
 var def_juice_val = 10;
 
@@ -50,25 +45,28 @@ var def_employee_pos_y = 100;
 var cur_employee_pos_x;
 var cur_employee_pos_y;
 
-var money = 0;
+var money = 100;
 var employees = [];
 var employee_num = 0;
 var announcements = ["hello"];
 var current_announcement = 0;
+
+var def_training_cost = 1;
 
 var def_sprite;
 
 function init()
 {
 	def_sprite = load_bmp("face.png");
-	def_juice_speed = (def_juice_speed*3)/10;
+	def_juice_speed = ~~(def_juice_speed*3)/10;
 	for (var i = 0; i < KEY_NUM; i++)
-		employees[i] = { name:"Default", state:DEAD, timer:0, apple:false,
-		                 hunger:0, hunger_timer:def_hunger_timer, max_hunger:def_max_hunger, hunger_down:def_hunger_down, hunger_up:def_hunger_up,
-		                 thirst:0, thirst_timer:def_thirst_timer, max_thirst:def_max_thirst, thirst_down:def_thirst_down, thirst_up:def_thirst_up,
-		                 juice_timer:def_juice_timer, juice_speed:def_juice_speed,
-		            	 buy_timer:def_buy_timer, buy_speed:def_buy_speed, apple_val:def_apple_val,
-		            	 sell_timer:def_sell_timer, sell_speed:def_sell_speed, juice_val:def_juice_val,
+		employees[i] = { name:"Default", state:DEAD, level:0, training:0, buy_level:1, buy_skill:0, sell_level:1, sell_skill:0, juice_level:1, juice_skill:0, apple:false, can_drink:false,
+		                 hunger:0, max_hunger:def_max_hunger, hunger_down:def_hunger_down, hunger_up:def_hunger_up,
+		                 thirst:0, max_thirst:def_max_thirst, thirst_down:def_thirst_down, thirst_up:def_thirst_up,
+		                 juice_speed:def_juice_speed, juice_num:1,
+		            	 buy_speed:def_buy_speed, buy_num:1, apple_val:def_apple_val,
+		            	 sell_speed:def_sell_speed, sell_num:1, juice_val:def_juice_val,
+		            	 training_cost:def_training_cost,
 		            	 sprite:def_sprite, pos_x:50, pos_y:100 };
 	apples = init_apples;
 	juice_boxes = init_juice_boxes;
@@ -91,7 +89,7 @@ function draw()
 	drawInv();
 	drawPrompts();
 
-	if(game_state == GAME_OVER) textout(canvas, font, "GAME OVER", 120, SCREEN_H-100, 48, makecol(255, 0, 0), makecol(0, 0, 0), 3);
+	if(game_state == GAME_OVER) textout(canvas, font, "GAME OVER", 150, SCREEN_H-100, 48, makecol(255, 0, 0), makecol(0, 0, 0), 3);
 }
 
 function drawPrompts()
@@ -114,6 +112,9 @@ function drawPrompts()
 	if (game_state == KEY_J) textout(canvas, font, "J:juice", prompt_x, prompt_y, 18, makecol(255, 0, 0));
 	else textout(canvas, font, "J:juice", prompt_x, prompt_y, 16, makecol(0, 0, 0));
 	prompt_x += 80;
+	if (game_state == KEY_T) textout(canvas, font, "T:train", prompt_x, prompt_y, 18, makecol(255, 0, 0));
+	else textout(canvas, font, "T:train", prompt_x, prompt_y, 16, makecol(0, 0, 0));
+	prompt_x += 75;
 
 	if (game_state == KEY_E) textout(canvas, font, "E:employ", prompt_x, prompt_y, 18, makecol(255, 0, 0));
 	else textout(canvas, font, "E:employ", prompt_x, prompt_y, 16, makecol(0, 0, 0));
@@ -221,15 +222,11 @@ function update()
 	ticks %= 1000000000000;
 }
 
-function updateEmployeesPosition()
-{
-
-}
-
 function updateEmployeesStats()
 {
 	var no_apples_flag = false;
 	var no_juice_flag = false;
+	var no_money_flag = false;
 
 	for(var i = 0; i < KEY_NUM; i++){
 		if(employees[i].state != DEAD){
@@ -249,11 +246,26 @@ function updateEmployeesStats()
 				}
 				//if (employees[i].thirst == 0) employees[i].state = IDLE;
 			}
-			else employees[i].thirst += employees[i].thirst_up;
+			else{
+				if (!employees[i].can_drink || juice_boxes < 1){
+					employees[i].thirst += employees[i].thirst_up;
+				}
+				else{
+					if(employee_ticks % (employees[i].max_thirst/employees[i].thirst_up) == 0){
+						juice
+					}
+					employees[i].thirst = 0;
+				}
+			}
 
-			if (employees[i].state == JUICING && ticks % employees[i].juice_speed == 0){
-				if (apples > 0){
-					juice_boxes++;
+			if (employees[i].state == JUICING && employee_ticks % employees[i].juice_speed == 0){
+				if (apples > employees[i].juice_num){
+					employees[i].juice_skill++;
+					if(employees[i].juice_skill > levelCost(employees[i].juice_level)){
+						juiceUp(i);
+						employees[i].juice_skill = 0;
+					}
+					juice_boxes += employees[i].juice_num;
 					apples--;
 				}
 				else{
@@ -262,9 +274,14 @@ function updateEmployeesStats()
 				}
 			}
 
-			if (employees[i].state == BUYING && ticks % employees[i].buy_speed == 0){
-				if (apples > 0){
-					apples++;
+			if (employees[i].state == BUYING && employee_ticks % employees[i].buy_speed == 0){
+				if (apples > employees[i].buy_num){
+					employees[i].buy_skill++;
+					if(employees[i].buy_skill > levelCost(employees[i].buy_level)){
+						buyUp(i);
+						employees[i].buy_skill = 0;
+					}
+					apples += employees[i].buy_num;
 					money -= employees[i].apple_val;
 				}
 				else{
@@ -273,9 +290,14 @@ function updateEmployeesStats()
 				}
 			}
 
-			if (employees[i].state == SELLING && ticks % employees[i].sell_speed == 0){
-				if (juice_boxes > 0){
-					juice_boxes--;
+			if (employees[i].state == SELLING && employee_ticks % employees[i].sell_speed == 0){
+				if (juice_boxes > employees[i].sell_num){
+					employees[i].sell_skill++;
+					if(employees[i].sell_skill > levelCost(employees[i].sell_level)){
+						sellUp(i);
+						employees[i].sell_skill = 0;
+					}
+					juice_boxes -= employees[i].sell_num;
 					money += employees[i].juice_val;
 				}
 				else{
@@ -284,8 +306,21 @@ function updateEmployeesStats()
 				}
 			}
 
-			if (employees[i].timer > 0) employees[i].timer--;
-			if (employees[i].timer == 0) employees[i].state = IDLE;
+			if(employees[i].state == TRAINING){
+				if (money > employees[i].training_cost){
+					money -= employees[i].training_cost;
+					employees[i].training++;
+					if(employees[i].training > levelCost(employees[i].level)){
+						levelUp(i);
+						employees[i].training = 0;
+					}
+				}
+				else{
+					no_money_flag = true;
+					employees[i].state = IDLE;
+				}
+			}
+
 			//check to kill employee
 			if (employees[i].hunger > employees[i].max_hunger || employees[i].thirst > employees[i].max_thirst){
 				announce("" + employees[i].name + " has died.");
@@ -294,8 +329,79 @@ function updateEmployeesStats()
 			}
 		}
 	}
-	if(no_apples_flag) announce("There are no more apples.");
-	if(no_juice_flag) announce("There is no more juice.");
+	if (no_apples_flag) announce("There are no more apples.");
+	if (no_juice_flag) announce("There is no more juice.");
+	if (no_money_flag) announce("There is not enough money.");
+
+	employee_ticks++;
+	employee_ticks % 1000000000000;
+}
+
+function levelCost(_level)
+{
+	log(_level);
+	return (_level+1) * (_level+1);
+}
+
+function buyUp(_key)
+{
+	announce("" + employees[_key].name + "' buying skills have improved.");
+	if (employees[_key].buy_speed > 1) employees[_key].buy_speed--;
+	else employees[_key].buy_num++;
+}
+
+function sellUp(_key)
+{
+	announce("" + employees[_key].name + "' selling skills have improved.");
+	if (employees[_key].sell_speed > 1) employees[_key].sell_speed--;
+	else employees[_key].sell_num++;
+}
+
+function juiceUp(_key)
+{
+	announce("" + employees[_key].name + "' juicing skills have improved.");
+	if (employees[_key].juice_speed > 1) employees[_key].juice_speed--;
+	else employees[_key].juice_num++;
+}
+
+function levelUp(_key)
+{
+	/*
+	employees[i] = { name:"Default", state:DEAD, level:0, training:0, apple:false,
+                     hunger:0, max_hunger:def_max_hunger, hunger_down:def_hunger_down, hunger_up:def_hunger_up,
+                     thirst:0, max_thirst:def_max_thirst, thirst_down:def_thirst_down, thirst_up:def_thirst_up,
+                     juice_speed:def_juice_speed,
+            	     buy_speed:def_buy_speed, apple_val:def_apple_val,
+                     sell_speed:def_sell_speed, juice_val:def_juice_val,
+            	     training_cost:def_training_cost,
+            	     sprite:def_sprite, pos_x:50, pos_y:100 };
+	*/
+	employees[_key].level++;
+	announce("" + employees[_key].name + " has leveled up.");
+	announce("(thirst and hunger improved)");
+
+
+	if (employees[_key].level % 2 == 0){
+		employees[_key].hunger_down = ~~((employees[_key].hunger_down*3)/2);
+		employees[_key].hunger_down = ~~((employees[_key].thirst_down*3)/2);
+		if (employees[_key].apple_val > 1) employees[_key].apple_val--;
+
+	}
+	else{
+		if (employees[_key].hunger_up > 1) employees[_key].hunger_up = ~~((employees[_key].hunger_up * 2) / 3);
+		if (employees[_key].thirst_up > 1) employees[_key].thirst_up = ~~((employees[_key].thirst_up * 2) / 3);
+		employees[_key].juice_val++;
+	}
+
+	if (employees[_key].level > 5){
+		employees[_key].max_hunger += 100;
+		employees[_key].max_thirst += 50;
+	}
+
+	if (employees[_key].level == 8){
+		announce("" + employees[_key].name + " will now drink automatically.");
+	}
+	employees[_key].training_cost += def_training_cost;
 }
 
 function buy()
@@ -304,7 +410,6 @@ function buy()
 	if (selection && employees[selection].state != DEAD){
 		if (money > 0){
 			employees[selection].state = BUYING;
-			employees[selection].timer = employees[selection].buy_timer;
 			announce("" + employees[selection].name + " is buying apples");
 		}
 		else announce("There is no money for apples.");
@@ -315,23 +420,21 @@ function feed()
 {
 	var selection = getEmployee(KEY_F);
 	if (selection && employees[selection].state != DEAD){
-
 		if (apples > 0){
 			apples--;
 			employees[selection].state = FEEDING;
-			employees[selection].timer = employees[selection].hunger_timer;
 			announce("" + employees[selection].name + " is eating an apple.");
 		}
 		else announce("There is no food to eat.");
 	}
 }
 
-function drink(){
+function drink()
+{
 	var selection = getEmployee(KEY_D);
 	if (selection && employees[selection].state != DEAD){
 		if (juice_boxes > 0){
 			employees[selection].state = DRINKING;
-			employees[selection].timer = employees[selection].thirst_timer;
 			announce("" + employees[selection].name + " is drinking some juice.");
 		}
 		else announce("There is no juice to drink.");
@@ -352,7 +455,19 @@ function employ()
 		}
 		else announce("Not enough money.");
 	}
+}
 
+function train()
+{
+	var selection = getEmployee(KEY_T);
+	if (selection && employees[selection].state != DEAD){
+		if (money > employees[selection].training_cost){
+			money -= employees[selection].training_cost;
+			employees[selection].state = TRAINING;
+			announce("" + employees[selection].name + " is training.");
+		}
+		else announce("Not enough money to train.");
+	}
 }
 
 function getName(_key)
@@ -424,7 +539,6 @@ function juice()
 			apples--;
 			employees[selection].apple = true;
 			employees[selection].state = JUICING;
-			employees[selection].timer = employees[selection].juice_timer;
 			announce("" + employees[selection].name + " is making juice.");
 		}
 		else announce("There are no apples for juice.");
@@ -437,7 +551,6 @@ function sell()
 	if (selection && employees[selection].state != DEAD){
 		if (apples > 0){
 			employees[selection].state = SELLING;
-			employees[selection].timer = employees[selection].sell_timer;
 			announce("" + employees[selection].name + " is selling juice.");
 		}
 		else announce("There is no juice to sell.");
@@ -464,14 +577,14 @@ function announce(_str)
 function addEmployee(_name, _key)
 {
 	announce("You employed " + _name + ".");
-
+	money -= employee_cost;
 	employees[_key].name = _name;
 	employees[_key].state = IDLE;
 	employees[_key].pos_x = cur_employee_pos_x;
 	employees[_key].pos_y = cur_employee_pos_y;
 	employee_num++;
 	cur_employee_pos_x += 80
-	if (employee_num % 4 == 0){
+	if (employee_num % 3 == 0){
 		cur_employee_pos_x = def_employee_pos_x;
 		cur_employee_pos_y += 100;
 	}
@@ -496,7 +609,6 @@ function main()
 			clear_to_color(canvas, makecol(255, 255, 255));
 			update();
 			draw();
-			if((key[KEY_E])) log("E")
 
 		},BPS_TO_TIMER(60)); //60 fps
 	});
