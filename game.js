@@ -310,7 +310,7 @@ function updateEmployeesStats()
 			}
 
 			if (employees[i].state == JUICING && employee_ticks % employees[i].juice_speed == 0){
-				if (apples > employees[i].juice_num){
+				if (apples > 0){
 					employees[i].juice_skill++;
 					if(employees[i].juice_skill > levelCost(employees[i].juice_level)){
 						juiceUp(i);
@@ -326,14 +326,15 @@ function updateEmployeesStats()
 			}
 
 			if (employees[i].state == BUYING && employee_ticks % employees[i].buy_speed == 0){
-				if (apples > employees[i].buy_num){
+				if (money > 0){
 					employees[i].buy_skill++;
 					if(employees[i].buy_skill > levelCost(employees[i].buy_level)){
 						buyUp(i);
 						employees[i].buy_skill = 0;
 					}
 					apples += employees[i].buy_num;
-					money -= employees[i].apple_val;
+					money -= employees[i].apple_val * employees[i].buy_num;
+					if (money < 0) money = 0;
 				}
 				else{
 					no_apples_flag = true;
@@ -342,14 +343,15 @@ function updateEmployeesStats()
 			}
 
 			if (employees[i].state == SELLING && employee_ticks % employees[i].sell_speed == 0){
-				if (juice_boxes > employees[i].sell_num){
+				if (juice_boxes > 0){
 					employees[i].sell_skill++;
 					if(employees[i].sell_skill > levelCost(employees[i].sell_level)){
 						sellUp(i);
 						employees[i].sell_skill = 0;
 					}
 					juice_boxes -= employees[i].sell_num;
-					money += employees[i].juice_val;
+					money += employees[i].juice_val * employees[i].sell_num;
+					if (juice_boxes < 0) juice_boxes = 0;
 				}
 				else{
 					no_juice_flag = true;
