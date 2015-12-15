@@ -45,7 +45,7 @@ var def_employee_pos_y = 100;
 var cur_employee_pos_x;
 var cur_employee_pos_y;
 
-var money = 10000;
+var money = 100;
 var employees = [];
 var employee_num = 0;
 var announcements = ["hello"];
