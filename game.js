@@ -32,12 +32,12 @@ var def_max_thirst = 600;
 var def_thirst_down = -30;
 var def_thirst_up = 10;
 
-var def_juice_speed = 10;
+var def_juice_speed = 5;
 
-var def_buy_speed = 10;
+var def_buy_speed = 5;
 var def_apple_val = 5;
 
-var def_sell_speed = 10;
+var def_sell_speed = 5;
 var def_juice_val = 10;
 
 var def_employee_pos_x = 50;
