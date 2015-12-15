@@ -4,6 +4,7 @@ var employee_ticks = 0;
 var game_state = 500;
 var DEFAULT = 500;
 var GAME_OVER = 501;
+
 var KEY_NUM = 128;
 
 var IDLE = 0, FEEDING = 1, DRINKING = 2, BUYING = 3, SELLING = 4, JUICING = 5, TRAINING = 6, DEAD = 7;
@@ -13,7 +14,7 @@ var current_key = 49;
 var max_announcements = 5;
 var init_money = 100;
 
-var employee_cost = 100;
+var employee_cost = 50;
 
 var init_apples = 50;
 var apples = 0;
@@ -55,25 +56,29 @@ var def_training_cost = 1;
 
 var def_sprite;
 
+employee_space = []
+current_space = 0;
+
 function init()
 {
+	employee_space = [false, false, false, false, false, false, false, false, false];
 	def_sprite = load_bmp("face.png");
 	def_juice_speed = ~~(def_juice_speed*3)/10;
 	for (var i = 0; i < KEY_NUM; i++)
-		employees[i] = { name:"Default", state:DEAD, level:0, training:0, buy_level:1, buy_skill:0, sell_level:1, sell_skill:0, juice_level:1, juice_skill:0, apple:false, can_drink:false,
+		employees[i] = { name:"Default", state:DEAD, used:false, level:1, training:0, buy_level:1, buy_skill:0, sell_level:1, sell_skill:0, juice_level:1, juice_skill:0, apple:false, can_drink:false,
 		                 hunger:0, max_hunger:def_max_hunger, hunger_down:def_hunger_down, hunger_up:def_hunger_up,
 		                 thirst:0, max_thirst:def_max_thirst, thirst_down:def_thirst_down, thirst_up:def_thirst_up,
 		                 juice_speed:def_juice_speed, juice_num:1,
 		            	 buy_speed:def_buy_speed, buy_num:1, apple_val:def_apple_val,
 		            	 sell_speed:def_sell_speed, sell_num:1, juice_val:def_juice_val,
 		            	 training_cost:def_training_cost,
-		            	 sprite:def_sprite, pos_x:50, pos_y:100 };
+		            	 sprite:def_sprite, pos_x:50, pos_y:100, space:10 };
 	apples = init_apples;
 	juice_boxes = init_juice_boxes;
 	for(var i = 0; i < max_announcements; i++) announcements[i] = "";
 	cur_employee_pos_x = def_employee_pos_x;
 	cur_employee_pos_y = def_employee_pos_y;
-	addEmployee("Albert", KEY_A);
+	addEmployee("Quentin", KEY_Q);
 }
 //draw to canvas
 function draw()
@@ -81,7 +86,7 @@ function draw()
 	var text_pos_y = text_start;
 	for(var i = current_announcement; i < max_announcements + current_announcement; i++){
 		if(announcements[i%max_announcements] != ""){
-			textout_right(canvas, font, announcements[i%max_announcements], SCREEN_W - 20, text_pos_y, 16, makecol(0, 0, 0));
+			textout_right(canvas, font, announcements[i%max_announcements], SCREEN_W - 20, text_pos_y, 16, makecol(50, 50, 50));
 			text_pos_y += text_increment;
 		}
 	}
@@ -125,25 +130,72 @@ function drawInv()
 {
 	var inv_x = 24;
 	var inv_y = SCREEN_H - 24 - 40;
-	textout(canvas, font, "Juice boxes:" + juice_boxes, inv_x, inv_y, 16, makecol(0, 0, 0));
+	textout(canvas, font, "Juice boxes:" + juice_boxes, inv_x, inv_y, 16, makecol(50, 50, 50));
 	inv_y -= 40;
-	textout(canvas, font, "Apples:" + apples, inv_x, inv_y, 16, makecol(0, 0, 0));
+	textout(canvas, font, "Apples:" + apples, inv_x, inv_y, 16, makecol(50, 50, 50));
 	inv_y -= 40;
-	textout(canvas, font, "Money:" + money, inv_x, inv_y, 16, makecol(0, 0, 0));
+	textout(canvas, font, "Money:" + money, inv_x, inv_y, 16, makecol(50, 50, 50));
 }
 
 function drawEmployees()
 {
 	for (var i = 0; i < KEY_NUM; i++){
 		if (employees[i].state != DEAD){
-				textout(canvas, font, getState(employees[i].state), employees[i].pos_x - 20, employees[i].pos_y - 60, 12, makecol(100, 100, 100));
-				textout(canvas, font, employees[i].hunger, employees[i].pos_x - 20, employees[i].pos_y - 40, 16, makecol(180, 0, 0));
-				textout(canvas, font, employees[i].thirst, employees[i].pos_x - 20, employees[i].pos_y - 20, 16, makecol(0, 0, 180));
-				draw_sprite(canvas, employees[i].sprite, employees[i].pos_x, employees[i].pos_y);
-
-				textout(canvas, font, employees[i].name[0], employees[i].pos_x - 5, employees[i].pos_y - 8, 10, makecol(0, 0, 0));
+			textout(canvas, font, getState(employees[i].state), employees[i].pos_x - 20, employees[i].pos_y - 60, 12, makecol(50, 50, 50));
+			if (game_state != KEY_B && game_state != KEY_S && game_state != KEY_J && game_state != KEY_T){
+				textout(canvas, font, "Food", employees[i].pos_x - 20, employees[i].pos_y - 43, 12, makecol(50, 50, 50));
+				drawBar(employees[i].max_hunger - employees[i].hunger, employees[i].max_hunger, employees[i].pos_x - 20, employees[i].pos_y - 55, makecol(255, 0, 0, 180));
+				textout(canvas, font, "Drink", employees[i].pos_x - 20, employees[i].pos_y - 23, 12, makecol(50, 50, 50));
+				drawBar(employees[i].max_thirst - employees[i].thirst, employees[i].max_thirst, employees[i].pos_x - 20, employees[i].pos_y - 35, makecol(0, 0, 255, 180));
+			}
+			if (game_state == KEY_B){
+				textout(canvas, font, "Buy skill:"+ employees[i].buy_level, employees[i].pos_x - 20, employees[i].pos_y - 43, 12, makecol(50, 50, 50));
+				drawBar(employees[i].buy_skill, levelCost(employees[i].buy_level), employees[i].pos_x - 20, employees[i].pos_y - 35, makecol(200, 200, 0, 180));
+				textout_right(canvas, font, "Press an employee's letter to", SCREEN_W - 20, SCREEN_H - 60 - 20, 16, makecol(50, 50, 50));
+				textout_right(canvas, font, "make them buy apples", SCREEN_W - 20, SCREEN_H - 60, 16, makecol(50, 50, 50));
+			}
+			if (game_state == KEY_D){
+				textout_right(canvas, font, "Press an employee's letter to", SCREEN_W - 20, SCREEN_H - 60 - 20, 16, makecol(50, 50, 50));
+				textout_right(canvas, font, "make them drink a juice box", SCREEN_W - 20, SCREEN_H - 60, 16, makecol(50, 50, 50));
+			}
+			if (game_state == KEY_E){
+				textout_right(canvas, font, "Press an unused letter to employ someone", SCREEN_W - 20, SCREEN_H - 60 - 20, 16, makecol(50, 50, 50));
+				textout_right(canvas, font, "Cost:"+employee_cost, SCREEN_W - 20, SCREEN_H - 60, 16, makecol(50, 50, 50));
+			}
+			if (game_state == KEY_F){
+				textout_right(canvas, font, "Press an employee's letter to", SCREEN_W - 20, SCREEN_H - 60 - 20, 16, makecol(50, 50, 50));
+				textout_right(canvas, font, "feed them an apple", SCREEN_W - 20, SCREEN_H - 60, 16, makecol(50, 50, 50));
+			}
+			if (game_state == KEY_J){
+				textout(canvas, font, "Juice skill:"+ employees[i].juice_level, employees[i].pos_x - 20, employees[i].pos_y - 43, 12, makecol(50, 50, 50));
+				drawBar(employees[i].juice_skill, levelCost(employees[i].juice_level), employees[i].pos_x - 20, employees[i].pos_y - 35, makecol(200, 0, 200, 180));
+				textout_right(canvas, font, "Press an employee's letter to", SCREEN_W - 20, SCREEN_H - 60 - 20, 16, makecol(50, 50, 50));
+				textout_right(canvas, font, "make them turn apples into juice", SCREEN_W - 20, SCREEN_H - 60, 16, makecol(50, 50, 50));
+			}
+			if (game_state == KEY_S){
+				textout(canvas, font, "Sell skill:"+ employees[i].sell_level, employees[i].pos_x - 20, employees[i].pos_y - 43, 12, makecol(50, 50, 50));
+				drawBar(employees[i].sell_skill, levelCost(employees[i].sell_level), employees[i].pos_x - 20, employees[i].pos_y - 35, makecol(0, 200, 200, 180));
+				textout_right(canvas, font, "Press an employee's letter to", SCREEN_W - 20, SCREEN_H - 60 - 20, 16, makecol(50, 50, 50));
+				textout_right(canvas, font, "make them sell juice", SCREEN_W - 20, SCREEN_H - 60, 16, makecol(50, 50, 50));
+			}
+			if (game_state == KEY_T){
+				textout(canvas, font, "Current level:"+ employees[i].level, employees[i].pos_x - 20, employees[i].pos_y - 43, 12, makecol(50, 50, 50));
+				drawBar(employees[i].training, levelCost(employees[i].level), employees[i].pos_x - 20, employees[i].pos_y - 35, makecol(200, 200, 0, 180));
+				textout_right(canvas, font, "Press an employee's letter to", SCREEN_W - 20, SCREEN_H - 60 - 40, 16, makecol(50, 50, 50));
+				textout_right(canvas, font, "improve hunger and thirst management", SCREEN_W - 20, SCREEN_H - 60 - 20, 16, makecol(50, 50, 50));
+				textout_right(canvas, font, "(cost per tick depends on employee's level)", SCREEN_W - 20, SCREEN_H - 60, 16, makecol(50, 50, 50));
+			}
+			draw_sprite(canvas, employees[i].sprite, employees[i].pos_x, employees[i].pos_y);
+			textout(canvas, font, employees[i].name[0], employees[i].pos_x - 7, employees[i].pos_y - 3, 14, makecol(0, 0, 0));
 		}
 	}
+}
+
+function drawBar(_prog, _aim, _x, _y, _col)
+{
+	var fraction = _prog/_aim;
+	rectfill(canvas, _x, _y, 60 * fraction, 12, _col);
+	rect(canvas, _x, _y, 60, 12, makecol(50, 50, 50), 2);
 }
 
 function getState(_state)
@@ -238,7 +290,7 @@ function updateEmployeesStats()
 				//if (employees[i].hunger == 0) employees[i].state = IDLE;
 			}
 			else employees[i].hunger += employees[i].hunger_up;
-			
+
 			if (employees[i].state == DRINKING){
 				if (employees[i].thirst > 0){
 					employees[i].thirst += employees[i].thirst_down;
@@ -326,6 +378,8 @@ function updateEmployeesStats()
 				announce("" + employees[i].name + " has died.");
 				employees[i].state = DEAD;
 				employee_num--;
+				employee_cost -= 50;
+				employee_space[employees[i].space] = false;
 			}
 		}
 	}
@@ -339,12 +393,12 @@ function updateEmployeesStats()
 
 function levelCost(_level)
 {
-	log(_level);
-	return (_level+1) * (_level+1);
+	return (_level) * (_level);
 }
 
 function buyUp(_key)
 {
+	employees[_key].buy_level++;
 	announce("" + employees[_key].name + "' buying skills have improved.");
 	if (employees[_key].buy_speed > 1) employees[_key].buy_speed--;
 	else employees[_key].buy_num++;
@@ -352,6 +406,7 @@ function buyUp(_key)
 
 function sellUp(_key)
 {
+	employees[_key].sell_level++;
 	announce("" + employees[_key].name + "' selling skills have improved.");
 	if (employees[_key].sell_speed > 1) employees[_key].sell_speed--;
 	else employees[_key].sell_num++;
@@ -359,6 +414,7 @@ function sellUp(_key)
 
 function juiceUp(_key)
 {
+	employees[_key].juice_level++;
 	announce("" + employees[_key].name + "' juicing skills have improved.");
 	if (employees[_key].juice_speed > 1) employees[_key].juice_speed--;
 	else employees[_key].juice_num++;
@@ -448,7 +504,9 @@ function employ()
 	if (selection){
 		if (money > employee_cost){
 			if (selection != KEY_B && selection != KEY_D && selection != KEY_E && selection != KEY_F && selection != KEY_J && selection != KEY_S && selection != KEY_T){
-				if (employees[selection].state == DEAD) addEmployee(name, selection);
+				if (employees[selection].state == DEAD)
+					if (!employees[selection].used) addEmployee(name, selection);
+					else announce("" + employees[selection].name + "is dead.");
 				else announce("" + employees[selection].name + " is already employed.");
 			}
 			else announce("Can't employ on a hotkey");
@@ -549,7 +607,7 @@ function sell()
 {
 	var selection = getEmployee(KEY_S);
 	if (selection && employees[selection].state != DEAD){
-		if (apples > 0){
+		if (juice_boxes > 0){
 			employees[selection].state = SELLING;
 			announce("" + employees[selection].name + " is selling juice.");
 		}
@@ -576,18 +634,27 @@ function announce(_str)
 
 function addEmployee(_name, _key)
 {
-	announce("You employed " + _name + ".");
-	money -= employee_cost;
-	employees[_key].name = _name;
-	employees[_key].state = IDLE;
-	employees[_key].pos_x = cur_employee_pos_x;
-	employees[_key].pos_y = cur_employee_pos_y;
-	employee_num++;
-	cur_employee_pos_x += 80
-	if (employee_num % 3 == 0){
-		cur_employee_pos_x = def_employee_pos_x;
-		cur_employee_pos_y += 100;
+	if (employee_num < 9){
+		while (employee_space[current_space] == true){
+			cur_employee_pos_x += 80;
+			if (employee_num % 3 == 0){
+				cur_employee_pos_x = def_employee_pos_x;
+				cur_employee_pos_y += 100;
+			}
+			current_space++;
+		}
+		employee_space[current_space] = true;
+		announce("You employed " + _name + ".");
+		money -= employee_cost;
+		employee_cost += 50;
+		employees[_key].name = _name;
+		employees[_key].state = IDLE;
+		employees[_key].space = current_space;
+		employees[_key].pos_x = cur_employee_pos_x;
+		employees[_key].pos_y = cur_employee_pos_y;
+		employee_num++;
 	}
+	else announce("You have no more room.");
 }
 
 //main function
@@ -598,7 +665,7 @@ function main()
 	//init allegro stuff
 	allegro_init_all("game_canvas", 640, 480);
 	//load png sprite, transparency colour is recognised
-	
+
 	init();
 	//ready means function is not executed until everything is loaded
 	ready(function(){
