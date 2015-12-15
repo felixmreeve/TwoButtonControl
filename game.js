@@ -12,7 +12,6 @@ var IDLE = 0, FEEDING = 1, DRINKING = 2, BUYING = 3, SELLING = 4, JUICING = 5, T
 var current_key = 49;
 
 var max_announcements = 5;
-var init_money = 100;
 
 var employee_cost = 50;
 
@@ -33,12 +32,12 @@ var def_max_thirst = 600;
 var def_thirst_down = -30;
 var def_thirst_up = 10;
 
-var def_juice_speed = 5;
+var def_juice_speed = 10;
 
-var def_buy_speed = 30;
+var def_buy_speed = 10;
 var def_apple_val = 5;
 
-var def_sell_speed = 5;
+var def_sell_speed = 10;
 var def_juice_val = 10;
 
 var def_employee_pos_x = 50;
@@ -46,7 +45,7 @@ var def_employee_pos_y = 100;
 var cur_employee_pos_x;
 var cur_employee_pos_y;
 
-var money = 100;
+var money = 10000;
 var employees = [];
 var employee_num = 0;
 var announcements = ["hello"];
@@ -502,11 +501,11 @@ function employ()
 	var selection = getEmployee(KEY_E);
 	var name = getName(selection);
 	if (selection){
-		if (money > employee_cost){
+		if (money >= employee_cost){
 			if (selection != KEY_B && selection != KEY_D && selection != KEY_E && selection != KEY_F && selection != KEY_J && selection != KEY_S && selection != KEY_T){
 				if (employees[selection].state == DEAD)
 					if (!employees[selection].used) addEmployee(name, selection);
-					else announce("" + employees[selection].name + "is dead.");
+					else announce("" + employees[selection].name + " is dead.");
 				else announce("" + employees[selection].name + " is already employed.");
 			}
 			else announce("Can't employ on a hotkey");
@@ -519,7 +518,7 @@ function train()
 {
 	var selection = getEmployee(KEY_T);
 	if (selection && employees[selection].state != DEAD){
-		if (money > employees[selection].training_cost){
+		if (money >= employees[selection].training_cost){
 			money -= employees[selection].training_cost;
 			employees[selection].state = TRAINING;
 			announce("" + employees[selection].name + " is training.");
@@ -650,6 +649,7 @@ function addEmployee(_name, _key)
 		employees[_key].name = _name;
 		employees[_key].state = IDLE;
 		employees[_key].space = current_space;
+		employees[_key].used = true;
 		employees[_key].pos_x = cur_employee_pos_x;
 		employees[_key].pos_y = cur_employee_pos_y;
 		employee_num++;
@@ -661,7 +661,7 @@ function addEmployee(_name, _key)
 function main()
 {
 	//debug mode on for testing, brings up box at bottom with information
-	enable_debug('debug');
+	//enable_debug('debug');
 	//init allegro stuff
 	allegro_init_all("game_canvas", 640, 480);
 	//load png sprite, transparency colour is recognised
