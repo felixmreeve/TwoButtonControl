@@ -1,6 +1,6 @@
 # TwoButtonControl
 
-PLEASE OPEN THE index.html FILE TO PLAY!
+PLEASE OPEN THE PLAY.html FILE TO PLAY!
 
 hold a hotkeya and then press another button to perform actions
 EG: if you want Quentin to make juice, hold J for JUICE and then press Q for QUENTIN
