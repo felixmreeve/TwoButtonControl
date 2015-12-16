@@ -638,12 +638,12 @@ function addEmployee(_name, _key)
 {
 	if (employee_num < 9){
 		while (employee_space[current_space] == true){
+			current_space++;
 			cur_employee_pos_x += 80;
-			if (employee_num % 3 == 0){
+			if (current_space % 3 == 0){
 				cur_employee_pos_x = def_employee_pos_x;
 				cur_employee_pos_y += 100;
 			}
-			current_space++;
 		}
 		employee_space[current_space] = true;
 		announce("You employed " + _name + ".");
