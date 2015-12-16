@@ -178,7 +178,7 @@ function drawEmployees()
 				textout_right(canvas, font, "make them sell juice", SCREEN_W - 20, SCREEN_H - 60, 16, makecol(50, 50, 50));
 			}
 			if (game_state == KEY_T){
-				textout(canvas, font, "Current level:"+ employees[i].level, employees[i].pos_x - 20, employees[i].pos_y - 43, 12, makecol(50, 50, 50));
+				textout(canvas, font, "Level:"+ employees[i].level, employees[i].pos_x - 20, employees[i].pos_y - 43, 12, makecol(50, 50, 50));
 				drawBar(employees[i].training, levelCost(employees[i].level), employees[i].pos_x - 20, employees[i].pos_y - 35, makecol(200, 200, 0, 180));
 				textout_right(canvas, font, "Press an employee's letter to", SCREEN_W - 20, SCREEN_H - 60 - 40, 16, makecol(50, 50, 50));
 				textout_right(canvas, font, "improve hunger and thirst management", SCREEN_W - 20, SCREEN_H - 60 - 20, 16, makecol(50, 50, 50));
@@ -303,7 +303,7 @@ function updateEmployeesStats()
 				}
 				else{
 					if(employee_ticks % (employees[i].max_thirst/employees[i].thirst_up) == 0){
-						juice
+						juice_boxes --;
 					}
 					employees[i].thirst = 0;
 				}
@@ -400,7 +400,7 @@ function levelCost(_level)
 function buyUp(_key)
 {
 	employees[_key].buy_level++;
-	announce("" + employees[_key].name + "' buying skills have improved.");
+	announce("" + employees[_key].name + "'s buying skills have improved.");
 	if (employees[_key].buy_speed > 1) employees[_key].buy_speed--;
 	else employees[_key].buy_num++;
 }
@@ -408,7 +408,7 @@ function buyUp(_key)
 function sellUp(_key)
 {
 	employees[_key].sell_level++;
-	announce("" + employees[_key].name + "' selling skills have improved.");
+	announce("" + employees[_key].name + "'s selling skills have improved.");
 	if (employees[_key].sell_speed > 1) employees[_key].sell_speed--;
 	else employees[_key].sell_num++;
 }
@@ -416,7 +416,7 @@ function sellUp(_key)
 function juiceUp(_key)
 {
 	employees[_key].juice_level++;
-	announce("" + employees[_key].name + "' juicing skills have improved.");
+	announce("" + employees[_key].name + "'s juicing skills have improved.");
 	if (employees[_key].juice_speed > 1) employees[_key].juice_speed--;
 	else employees[_key].juice_num++;
 }
@@ -457,6 +457,7 @@ function levelUp(_key)
 
 	if (employees[_key].level == 8){
 		announce("" + employees[_key].name + " will now drink automatically.");
+		employees[_key].can_drink = true;
 	}
 	employees[_key].training_cost += def_training_cost;
 }
