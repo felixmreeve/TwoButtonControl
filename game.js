@@ -492,6 +492,7 @@ function drink()
 	var selection = getEmployee(KEY_D);
 	if (selection && employees[selection].state != DEAD){
 		if (juice_boxes > 0){
+			juice_boxes--;
 			employees[selection].state = DRINKING;
 			announce("" + employees[selection].name + " is drinking some juice.");
 		}
